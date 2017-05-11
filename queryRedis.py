@@ -11,7 +11,6 @@ def outToFile(l):
             file.write(''.join(val))
     return
 
-
 def query(qs):
     minlon = ''.join(qs.get('minlon', None))
     minlat = ''.join(qs.get('minlat', None))
@@ -67,9 +66,3 @@ def query(qs):
 
     print 'time use: '+ ''.join(tEnd-tStart)
     return list
-
-
-#print(redis.llen("5l"))
-#reslist = redis.lrange("5l",1,10)
-#for val in reslist:
-#    print val
