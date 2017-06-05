@@ -5,36 +5,41 @@ import time
 # -*- coding: utf-8 -*-
 
 #file to output
-def outToFile(l):
+def outToFile(l,file):
     for val in l:
         if val:
             file.write(''.join(val))
     return
 
+
 def query(qs):
-    minlon = ''.join(qs.get('minlon', None))
-    minlat = ''.join(qs.get('minlat', None))
-    maxlon = ''.join(qs.get('maxlon', None))
-    maxlat = ''.join(qs.get('maxlat', None))
+    tStart = time.time()
+    minlon = qs.get('minlon', None)[0]
+    minlat = qs.get('minlat', None)[0]
+    maxlon = qs.get('maxlon', None)[0]
+    maxlat = qs.get('maxlat', None)[0]
     #d_minlon = ''.join(qs.get('d_minlon', None))
     #d_minlat = ''.join(qs.get('d_minlat', None))
     #d_maxlon = ''.join(qs.get('d_maxlon', None))
     #d_maxlat = ''.join(qs.get('d_maxlat', None))
-    time_from = qs.get('time_from', None)
-    time_to = qs.get('time_to', None)
+    #time_from = qs.get('time_from', None)
+    #time_to = qs.get('time_to', None)
+    time_from = ''.join(qs.get('time_from', None))
+    time_to = ''.join(qs.get('time_to', None))
 
-    nt_from = toTimeStamp.transToStamp(time_from[0])
-    nt_to = toTimeStamp.transToStamp(time_to[0])
+    #nt_from = toTimeStamp.transToStamp(time_from[0])
+    #nt_to = toTimeStamp.transToStamp(time_to[0])
 
     redis = connRedisCluster.redis_cluster()
     pl = redis.pipeline()
 
-    tStart = time.time()
-    result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery.exe -i '
-                      + nt_from + '/' + nt_to + '/' + minlon + '/' + maxlon + '/'
-                      + minlat + '/' + maxlat + '-s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
+    file = open('out1612.txt', 'w')
+    para = time_from + '/' + time_to + '/' + minlon + '/' + maxlon + '/' + minlat + '/' + maxlat
+    #print para
+    result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery.exe -i '+ para
+                      + ' -s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
+    #result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery.exe -i 347068810/347079589/-74.0956/-73.7337/40.6590/40.8559 -s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
 
-    file = open('out18.txt', 'w')
 
     count = 0
     while 1:
@@ -43,26 +48,43 @@ def query(qs):
             break
         if line.decode('gbk').find(". . .") != -1:
             break
-        pl.zrangebyscore('18level', int(line.split(',')[0]), int(line.split(',')[1]))
+        pl.zrangebyscore('1612sumlvl', int(line.split(',')[0]), int(line.split(',')[1]))
         count += 1
         if count >= 500:
             count = 0
             queryRes = pl.execute()
-            outToFile(queryRes)
+            outToFile(queryRes,file)
     queryRes = pl.execute()
-    outToFile(queryRes)
+    outToFile(queryRes,file)
     file.close()
 
-    decodeRes = os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out18.txt -s 1 -e 0 -t cttaxi.txt -p 1')
+    decodeRes = os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out1612.txt -s 1 -e 0 -t cttaxi.txt -p 1')
 
+    tempdict = {}
     list = []
+    #while 1:
+    #    res = decodeRes.readline()
+    #    if not res:
+    #        break
+    #    list.append({"x":float(res.split(',')[3].split('\n')[0]),"y":float(res.split(',')[2]),"v":int(res.split(',')[0])})
+
     while 1:
         res = decodeRes.readline()
         if not res:
             break
-        list.append({"x":res.split(',')[2],"y":res.split(',')[3].split('\n')[0],"v":res.split(',')[0]})
+        x = res.split(',')[3].split('\n')[0]
+        y = res.split(',')[2]
+        v = int(res.split(',')[0])
+        k = x + ',' + y
+        if tempdict.has_key(k):
+            tempdict[k] += v
+        else:
+            tempdict[k] = v
+
+    for val in tempdict:
+        list.append({"x":float(str(val).split(',')[0]),"y":float(str(val).split(',')[1]),"v":int(tempdict.get(val))})
 
     tEnd = time.time()
+    print tEnd-tStart
 
-    print 'time use: '+ ''.join(tEnd-tStart)
     return list
