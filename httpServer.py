@@ -12,6 +12,7 @@ class myHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         print "GET"
         qs = urlparse.parse_qs(urlparse.urlparse(self.path).query)
 
+
         result_list = queryRedis.query(qs)
 
         self.send_response(200)
