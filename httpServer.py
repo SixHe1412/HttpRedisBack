@@ -13,7 +13,7 @@ class myHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         qs = urlparse.parse_qs(urlparse.urlparse(self.path).query)
 
 
-        result_list = queryRedis.query(qs)
+        result_list = json.loads(queryRedis.query(qs))
 
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
