@@ -2,6 +2,7 @@ import os
 import toTimeStamp
 import connRedisCluster
 import time
+import pandas as pd
 # -*- coding: utf-8 -*-
 
 #file to output
@@ -35,10 +36,11 @@ def query(qs):
 
     file = open('out1612.txt', 'w')
     para = time_from + '/' + time_to + '/' + minlon + '/' + maxlon + '/' + minlat + '/' + maxlat
-    #print para
     result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery.exe -i '+ para
                       + ' -s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
-    #result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery.exe -i 347068810/347079589/-74.0956/-73.7337/40.6590/40.8559 -s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
+
+    tEnd = time.time()
+    print tEnd - tStart
 
 
     count = 0
@@ -58,31 +60,43 @@ def query(qs):
     outToFile(queryRes,file)
     file.close()
 
-    decodeRes = os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out1612.txt -s 1 -e 0 -t cttaxi.txt -p 1')
+    tEnd = time.time()
+    print tEnd - tStart
 
-    tempdict = {}
-    list = []
+    #decodeRes = os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out1612.txt -s 1 -e 0 -t cttaxi.txt -p 1')
+    os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out1612.txt -o decode.txt -s 1 -e 0 -t cttaxi.txt -p 1')
+
+    tEnd = time.time()
+    print tEnd - tStart
+
+    #tempdict = {}
+    #list = []
     #while 1:
     #    res = decodeRes.readline()
     #    if not res:
     #        break
     #    list.append({"x":float(res.split(',')[3].split('\n')[0]),"y":float(res.split(',')[2]),"v":int(res.split(',')[0])})
 
-    while 1:
-        res = decodeRes.readline()
-        if not res:
-            break
-        x = res.split(',')[3].split('\n')[0]
-        y = res.split(',')[2]
-        v = int(res.split(',')[0])
-        k = x + ',' + y
-        if tempdict.has_key(k):
-            tempdict[k] += v
-        else:
-            tempdict[k] = v
+    #while 1:
+    #    res = decodeRes.readline()
+    #    if not res:
+    #        break
+    #    x = res.split(',')[3].split('\n')[0]
+    #    y = res.split(',')[2]
+    #    v = int(res.split(',')[0])
+    #    k = x + ',' + y
+    #    if tempdict.has_key(k):
+    #        tempdict[k] += v
+    #    else:
+    #        tempdict[k] = v
+    #for val in tempdict:
+    #     list.append({"x":float(str(val).split(',')[0]),"y":float(str(val).split(',')[1]),"v":int(tempdict.get(val))})
 
-    for val in tempdict:
-        list.append({"x":float(str(val).split(',')[0]),"y":float(str(val).split(',')[1]),"v":int(tempdict.get(val))})
+
+    df = pd.read_table('decode.txt', sep=',', index_col=False, na_filter=False)
+    df = df.groupby(['x','y'],as_index=False)['v'].sum()
+
+    list = df.to_json(orient='records')
 
     tEnd = time.time()
     print tEnd-tStart
