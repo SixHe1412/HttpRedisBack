@@ -25,23 +25,23 @@ def query(qs):
     #d_maxlat = ''.join(qs.get('d_maxlat', None))
     #time_from = qs.get('time_from', None)
     #time_to = qs.get('time_to', None)
-    time_from = ''.join(qs.get('time_from', None))
-    time_to = ''.join(qs.get('time_to', None))
+    time_from = qs.get('time_from', None)[0]
+    time_to = qs.get('time_to', None)[0]
 
-    #nt_from = toTimeStamp.transToStamp(time_from[0])
-    #nt_to = toTimeStamp.transToStamp(time_to[0])
+    nt_from = toTimeStamp.transToStamp(time_from)
+    nt_to = toTimeStamp.transToStamp(time_to)
 
     redis = connRedisCluster.redis_cluster()
     pl = redis.pipeline()
 
     file = open('out1612.txt', 'w')
-    para = time_from + '/' + time_to + '/' + minlon + '/' + maxlon + '/' + minlat + '/' + maxlat
+    para = nt_from + '/' + nt_to + '/' + minlon + '/' + maxlon + '/' + minlat + '/' + maxlat
+    print para
     result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery.exe -i '+ para
                       + ' -s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
 
     tEnd = time.time()
     print tEnd - tStart
-
 
     count = 0
     while 1:
@@ -52,7 +52,7 @@ def query(qs):
             break
         pl.zrangebyscore('1612sumlvl', int(line.split(',')[0]), int(line.split(',')[1]))
         count += 1
-        if count >= 500:
+        if count >= 1000:
             count = 0
             queryRes = pl.execute()
             outToFile(queryRes,file)
