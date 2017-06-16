@@ -3,6 +3,7 @@ import SocketServer
 import urlparse
 import json
 import queryRedis
+import queryRedis2
 
 PORT = 9001
 
