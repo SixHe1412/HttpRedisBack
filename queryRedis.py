@@ -19,25 +19,25 @@ def query(qs):
     minlat = qs.get('minlat', None)[0]
     maxlon = qs.get('maxlon', None)[0]
     maxlat = qs.get('maxlat', None)[0]
-    #d_minlon = ''.join(qs.get('d_minlon', None))
-    #d_minlat = ''.join(qs.get('d_minlat', None))
-    #d_maxlon = ''.join(qs.get('d_maxlon', None))
-    #d_maxlat = ''.join(qs.get('d_maxlat', None))
-    #time_from = qs.get('time_from', None)
-    #time_to = qs.get('time_to', None)
+
     time_from = qs.get('time_from', None)[0]
     time_to = qs.get('time_to', None)[0]
-    print time_from+' '+ time_to
+    #print time_from+' '+ time_to
     nt_from = toTimeStamp.transToStamp(time_from)
     nt_to = toTimeStamp.transToStamp(time_to)
+
+    lvl = qs.get('level', None)[0]
+    print lvl
+    lvlcommand = lvl + '.exe -i '
+    lvlquery = lvl + 'lvl'
 
     redis = connRedisCluster.redis_cluster()
     pl = redis.pipeline()
 
-    file = open('out1612.txt', 'w')
+    file = open('out16.txt', 'w')
     para = nt_from + '/' + nt_to + '/' + minlon + '/' + maxlon + '/' + minlat + '/' + maxlat
     #print para
-    result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery.exe -i '+ para
+    result = os.popen(r'D:/VSProgram/SFCLib-master1/Release/sfcquery' + lvlcommand + para
                       + ' -s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
 
     tStart2 = time.time()
@@ -50,7 +50,7 @@ def query(qs):
             break
         if line.decode('gbk').find(". . .") != -1:
             break
-        pl.zrangebyscore('1612sumlvl', int(line.split(',')[0]), int(line.split(',')[1]))
+        pl.zrangebyscore(lvlquery, int(line.split(',')[0]), int(line.split(',')[1]))
         count += 1
         if count >= 1000:
             count = 0
@@ -64,34 +64,10 @@ def query(qs):
     print tStart3 - tStart2
 
     #decodeRes = os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out1612.txt -s 1 -e 0 -t cttaxi.txt -p 1')
-    os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out1612.txt -o decode.txt -s 1 -e 0 -t cttaxi.txt -p 1')
+    os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode' + lvlcommand + 'out16.txt -o decode.txt -s 1 -e 0 -t cttaxi.txt -p 1')
 
     tStart4 = time.time()
     print tStart4 - tStart3
-
-    #tempdict = {}
-    #list = []
-    #while 1:
-    #    res = decodeRes.readline()
-    #    if not res:
-    #        break
-    #    list.append({"x":float(res.split(',')[3].split('\n')[0]),"y":float(res.split(',')[2]),"v":int(res.split(',')[0])})
-
-    #while 1:
-    #    res = decodeRes.readline()
-    #    if not res:
-    #        break
-    #    x = res.split(',')[3].split('\n')[0]
-    #    y = res.split(',')[2]
-    #    v = int(res.split(',')[0])
-    #    k = x + ',' + y
-    #    if tempdict.has_key(k):
-    #        tempdict[k] += v
-    #    else:
-    #        tempdict[k] = v
-    #for val in tempdict:
-    #     list.append({"x":float(str(val).split(',')[0]),"y":float(str(val).split(',')[1]),"v":int(tempdict.get(val))})
-
 
     df = pd.read_table('decode.txt', sep=',', index_col=False, na_filter=False)
     print len(df)
@@ -102,4 +78,5 @@ def query(qs):
     tEnd = time.time()
     print tEnd-tStart4
     print tEnd - tStart1
+
     return list
