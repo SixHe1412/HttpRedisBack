@@ -28,8 +28,8 @@ def query(qs):
 
     lvl = qs.get('level', None)[0]
     print lvl
-    lvlcommand = lvl + '.exe -i '
-    lvlquery = lvl + 'lvl'
+    lvlcommand = str(lvl) + '.exe -i '
+    lvlquery = str(lvl) + 'lvl'
 
     redis = connRedisCluster.redis_cluster()
     pl = redis.pipeline()
@@ -41,7 +41,7 @@ def query(qs):
                       + ' -s 1 -e 0 -t cttaxi.txt -n 5000 -k 12 -p 1')
 
     tStart2 = time.time()
-    print tStart2 - tStart1
+    print "range: " + str(tStart2 - tStart1)
 
     count = 0
     while 1:
@@ -61,22 +61,15 @@ def query(qs):
     file.close()
 
     tStart3 = time.time()
-    print tStart3 - tStart2
+    print "query: " + str(tStart3 - tStart2)
 
-    #decodeRes = os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode.exe -i out1612.txt -s 1 -e 0 -t cttaxi.txt -p 1')
-    os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode' + lvlcommand + 'out16.txt -o decode.txt -s 1 -e 0 -t cttaxi.txt -p 1')
+    res = os.popen(r'D:\VSProgram\SFCLib-master\Release\sfcdecode' + lvlcommand + 'out16.txt -s 1 -e 0 -t cttaxi.txt -p 1')
 
-    tStart4 = time.time()
-    print tStart4 - tStart3
-
-    df = pd.read_table('decode.txt', sep=',', index_col=False, na_filter=False)
-    print len(df)
-    df = df.groupby(['x','y'],as_index=False)['v'].sum()
-
-    list = df.to_json(orient='records')
+    list = res.read()
+    list = "[" + list[:-1] + "]"
 
     tEnd = time.time()
-    print tEnd-tStart4
-    print tEnd - tStart1
+    print "decode+aggregate+loaddata: " + str(tEnd - tStart3)
+    print "sum: " + str(tEnd - tStart1)
 
     return list
